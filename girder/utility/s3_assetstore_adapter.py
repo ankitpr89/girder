@@ -51,7 +51,12 @@ class S3AssetstoreAdapter(AbstractAssetstoreAdapter):
     @staticmethod
     def _s3Client(connectParams):
         try:
-            return boto3.client('s3', **connectParams)
+            client = boto3.client('s3', **connectParams)
+            if 'googleapis' in connectParams.get('endpoint_url', '').split('.'):
+                client.meta.events.unregister(
+                    'before-parameter-build.s3.ListObjects',
+                    botocore.handlers.set_list_objects_encoding_type_url)
+            return client
         except Exception:
             logger.exception('S3 assetstore validation exception')
             raise ValidationException('Unable to connect to S3 assetstore')
